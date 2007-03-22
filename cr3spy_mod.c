@@ -86,8 +86,6 @@ static int device_ioctl(struct inode *inode,
 
     switch(ioctl_num) {
         case IOCTL_GET_CR3:
-            printk(KERN_INFO "cr3spy_mod received GET_CR3 ioctl\n");
-    
             put_user(cr3,(long *)ioctl_param);
             break;
         default:
