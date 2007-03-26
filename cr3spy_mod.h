@@ -12,11 +12,19 @@
     __dummy; \
 })
 
+struct monitor_info {
+    unsigned int cr3;
+    unsigned int lstart;
+    unsigned int lend;
+};
+
 
 /* set up our ioctls */
 
 #define IOCTL_GET_CR3 _IOR(MAJOR_NUM, 0, long)
  /* ioctl to retrieve the current CR3 value:
   * the PTBR of the current process */
+
+#define IOCTL_TEST_MONITOR _IOR(MAJOR_NUM, 1, struct monitor_info)
 
 #endif

@@ -4,6 +4,7 @@
 /* character device stuff */
 #include <linux/fs.h>
 #include <asm/uaccess.h>
+#include <asm/hypervisor.h>
 
 #include "cr3spy_mod.h"
 
@@ -82,11 +83,37 @@ static int device_ioctl(struct inode *inode,
                  unsigned int ioctl_num,
                  unsigned long ioctl_param)
 {
+    int ret = 0;
     unsigned long cr3 = read_cr3();
+
+    struct monitor_info user_info;
 
     switch(ioctl_num) {
         case IOCTL_GET_CR3:
             put_user(cr3,(long *)ioctl_param);
+            break;
+        case IOCTL_TEST_MONITOR:
+            /* obtain user information for monitoring */
+            ret = copy_from_user(&user_info,
+                (struct monitor_info *)ioctl_param,
+                sizeof(struct monitor_info));
+
+            if(ret != 0) {
+                printk("copy from user failed in monitor reg!\n");
+                return -1;
+            }
+
+            /* execute a hypercall to Xen */
+
+            ret = HYPERVISOR_monitor_region(user_info.cr3,
+                        user_info.lstart,user_info.lend);
+        
+            if(ret != 0) {
+                printk("failed to register monitor request\n"); 
+            } else {
+            printk("monitor request from 0x%x-0x%x in 0x%x registered: %d\n",
+                user_info.lstart,user_info.lend,user_info.cr3,ret);
+            }
             break;
         default:
             return -1;
