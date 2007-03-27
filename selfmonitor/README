@@ -1,0 +1,7 @@
+Usage:
+
+First load the cr3spy module and create the /dev/cr3spy character device node.
+Then run `self` in a guest domain (dom0 is fine). You should see some
+successful messages in dmesg on the guest domain and `xm dmesg` should
+print out a bunch of page faults. Right now we're printing for every page
+fault while self's ASID is in cr3.
