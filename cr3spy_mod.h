@@ -5,7 +5,7 @@
 #define MAJOR_NUM 200       /* deliciously ARBITRARY */
 
 #define read_cr3() ({ \
-    unsigned int __dummy; \
+    unsigned long __dummy; \
     __asm__ ( \
         "movl %%cr3,%0\n\t" \
         :"=r" (__dummy)); \
@@ -13,11 +13,16 @@
 })
 
 struct monitor_info {
-    unsigned int cr3;
-    unsigned int lstart;
-    unsigned int lend;
+    unsigned long cr3;
+    unsigned long lstart;
+    unsigned long lend;
 };
 
+struct new_monitor_info {
+    unsigned long cr3;
+    unsigned long good_page;
+    unsigned long evil_page;
+}; 
 
 /* set up our ioctls */
 
@@ -26,5 +31,7 @@ struct monitor_info {
   * the PTBR of the current process */
 
 #define IOCTL_TEST_MONITOR _IOR(MAJOR_NUM, 1, struct monitor_info)
+
+#define IOCTL_TEST_NEW_MONITOR _IOR(MAJOR_NUM, 2, struct new_monitor_info)
 
 #endif

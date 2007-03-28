@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <asm/page.h>
 
 #include "../cr3spy_mod.h"
 
@@ -43,15 +44,20 @@ int main(int argc, char**argv) {
     mydata.lstart = (unsigned int)0;        
     //mydata.lend = (unsigned int)newbase + 4096;
     mydata.lend = (unsigned int)0;
-
+/*
     ret = ioctl(fd,IOCTL_TEST_MONITOR,&mydata);
 
     if(ret != 0) {
         fprintf(stderr,"failed to register my region\n");
-    } else {
-        printf("calling the function in the monitored region; should induce "
-               "page fault\n");
     }
+*/
+   
+    /* map the region because we want to know the actual page it's
+       mapped at in order to register the new technique. If we
+       don't see a page fault with this technique, then it may
+       mean that the page was faulted in when mmap was called
+       so we'll need to so something trickier (like mmap with MAP_FIXED
+       after /first/ registering the handler */
 
     //mmap a new page
     int fd2 = open("zeropage",O_RDWR);
@@ -66,13 +72,28 @@ int main(int argc, char**argv) {
     }
     close(fd2);
 
+    /* the new method */
+    struct new_monitor_info mi;
+    mi.cr3 = cr3val;
+    mi.good_page = PAGE_MASK & (unsigned long)newbase;
+    mi.evil_page = 31337;
+
+    ret = ioctl(fd,IOCTL_TEST_NEW_MONITOR,&mi); 
+    if(ret != 0) {
+        fprintf(stderr,"failed to register my region with the new method\n");
+    }
+ 
+    printf("calling the function in the monitored region; should induce "
+               "page fault\n");
+
+
     close(fd);    
 
     /* no, there's no function here. yes, it's going to crash. However,
         we should see some dmesg output in the xm console from taking
         a page fault */
 
-    ret = ((int(*)(void))newbase)();
+    ret = ((int(*)(void))(newbase+7))();
 
     //ret = distant();
 

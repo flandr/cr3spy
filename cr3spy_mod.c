@@ -87,6 +87,7 @@ static int device_ioctl(struct inode *inode,
     unsigned long cr3 = read_cr3();
 
     struct monitor_info user_info;
+    struct new_monitor_info new_user_info;
 
     switch(ioctl_num) {
         case IOCTL_GET_CR3:
@@ -111,10 +112,36 @@ static int device_ioctl(struct inode *inode,
             if(ret != 0) {
                 printk("failed to register monitor request\n"); 
             } else {
-            printk("monitor request from 0x%x-0x%x in 0x%x registered: %d\n",
+            printk("monitor request from 0x%lx-0x%lx in 0x%lx registered: %d\n",
                 user_info.lstart,user_info.lend,user_info.cr3,ret);
             }
             break;
+        case IOCTL_TEST_NEW_MONITOR:
+            ret = copy_from_user(&new_user_info,
+                (struct new_monitor_info *)ioctl_param,
+                sizeof(struct new_monitor_info));
+
+            if(ret != 0) {
+                printk("copy from user failed in monitor reg!\n");
+                return -1;
+            }
+
+            ret = HYPERVISOR_associate_page_pair(
+                    new_user_info.cr3,
+                    new_user_info.evil_page,
+                    new_user_info.good_page);
+
+            if(ret != 0) {
+                printk("failed to register monitor request\n"); 
+            } else {
+            printk("monitor request for 0x%lx (evil: 0x%lx) in 0x%lx registered: %d\n",
+                new_user_info.good_page,
+                new_user_info.evil_page,
+                new_user_info.cr3,ret);
+            }
+            break;
+        
+
         default:
             return -1;
     }
