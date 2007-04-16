@@ -11,13 +11,22 @@
 
 #define READONLY_DATA_SECTION_ASM_OP "\t.text"
 
-struct mregion {
-    unsigned int cr3;
-    unsigned int lstart;
-    unsigned int lend; 
-};
 
-/* int distant(void); */
+/*
+
+General idea of this test:
+
+There is a function ("distant") aligned on a page boundary. What we're
+going to do is map in another page containing some known data (text) that
+would cause the program to misbehave if executed. We're going to install
+a page pair where the text data is the "good" page and the distant function
+is the "evil" page and then execute a call to the base address of the "good"
+page. We'll also read some bytes out of that location. What we should see
+is the text bytes being read but the distant function being executed.
+
+*/
+
+int distant(void); 
 
 int main(int argc, char**argv) {
     int fd;
@@ -36,31 +45,16 @@ int main(int argc, char**argv) {
     } else {
         printf("current process cr3: 0x%lx\n",cr3val);
     }
-    // now request self-monitoring at that mapped location
-
-    struct mregion mydata;
-    mydata.cr3 = cr3val;
-    //mydata.lstart = (unsigned int)newbase;        
-    mydata.lstart = (unsigned int)0;        
-    //mydata.lend = (unsigned int)newbase + 4096;
-    mydata.lend = (unsigned int)0;
-/*
-    ret = ioctl(fd,IOCTL_TEST_MONITOR,&mydata);
-
-    if(ret != 0) {
-        fprintf(stderr,"failed to register my region\n");
-    }
-*/
    
     /* map the region because we want to know the actual page it's
        mapped at in order to register the new technique. If we
        don't see a page fault with this technique, then it may
        mean that the page was faulted in when mmap was called
        so we'll need to so something trickier (like mmap with MAP_FIXED
-       after /first/ registering the handler */
+       after /first/ registering the handler) */
 
     //mmap a new page
-    int fd2 = open("zeropage",O_RDWR);
+    int fd2 = open("evilpage",O_RDWR);
     if(fd2 == -1) {
         perror("failed to open base file for mmap");
         exit(1);
@@ -76,7 +70,10 @@ int main(int argc, char**argv) {
     struct new_monitor_info mi;
     mi.cr3 = cr3val;
     mi.good_page = PAGE_MASK & (unsigned long)newbase;
-    mi.evil_page = 31337;
+    mi.evil_page = PAGE_MASK & (unsigned long)distant;
+
+    printf("Registering a monitored pair (0x%lx,0x%lx)\n",mi.good_page,
+        mi.evil_page);
 
     ret = ioctl(fd,IOCTL_TEST_NEW_MONITOR,&mi); 
     if(ret != 0) {
@@ -86,24 +83,22 @@ int main(int argc, char**argv) {
     printf("calling the function in the monitored region; should induce "
                "page fault\n");
 
+    printf("Calling the \"function\" at the base address of the \"good page\";"
+           "\nshould execute a function at the base address of the "
+           "\"evil page\"\n");
 
     close(fd);    
 
-    /* no, there's no function here. yes, it's going to crash. However,
-        we should see some dmesg output in the xm console from taking
-        a page fault */
-
-    ret = ((int(*)(void))(newbase+7))();
-
-    //ret = distant();
+    /* if everything is working correctly, distant will be executed. If
+       everything is *not* working correctly, we'll execute some garbage
+       and crash */
+    ret = ((int(*)(void))(newbase))();
 
     return 0;
 }
-/* this didn't work; apparently the page was already mapped in. 
 asm("\t.align 4096");
 
 int distant()
 {
     return 31337;
 }
-*/
