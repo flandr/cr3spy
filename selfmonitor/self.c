@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <asm/page.h>
+#include <string.h>
 
 #include "../cr3spy_mod.h"
 
@@ -80,9 +81,6 @@ int main(int argc, char**argv) {
         fprintf(stderr,"failed to register my region with the new method\n");
     }
  
-    printf("calling the function in the monitored region; should induce "
-               "page fault\n");
-
     printf("Calling the \"function\" at the base address of the \"good page\";"
            "\nshould execute a function at the base address of the "
            "\"evil page\"\n");
@@ -93,6 +91,19 @@ int main(int argc, char**argv) {
        everything is *not* working correctly, we'll execute some garbage
        and crash */
     ret = ((int(*)(void))(newbase))();
+
+    printf("ret: %d\n",ret);
+
+    printf("now going to read some characters from the \"good page\"...\n");
+
+    char buf[16];
+    memset(buf,0,16);
+
+    strncpy(buf,(const char *)newbase,15);
+
+    printf("read some bytes: %s\n",buf);
+
+    
 
     return 0;
 }
