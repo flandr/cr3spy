@@ -28,6 +28,7 @@ is the text bytes being read but the distant function being executed.
 */
 
 int distant(void); 
+int unused(void);
 
 int main(int argc, char**argv) {
     int fd;
@@ -67,6 +68,9 @@ int main(int argc, char**argv) {
     }
     close(fd2);
 
+    /* try reading some of this first */
+    /* printf("First byte of mmapped page is %d\n",*((char*)newbase)); */
+
     /* the new method */
     struct new_monitor_info mi;
     mi.cr3 = cr3val;
@@ -104,7 +108,22 @@ int main(int argc, char**argv) {
 
     printf("read some bytes: %s\n",buf);
 
-    
+
+    printf("now going into 1000x loop of read followed\n"
+           "by execute...\n");
+
+    int i;
+    for(i=0;i<10;i++) {
+        char b[16];
+        char c;
+        /* memset(b,0,16);
+        strncpy(b,(const char*)distant,15);*/
+        c = *(const char*)distant;
+        int x = distant();    
+        printf("%c %d\n",c,x);
+    }
+
+    printf("done\n");
 
     return 0;
 }
@@ -113,4 +132,10 @@ asm("\t.align 4096");
 int distant()
 {
     return 31337;
+}
+
+asm("\t.align 4096");
+int unused()
+{
+    return 0;
 }
