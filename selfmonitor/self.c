@@ -81,7 +81,7 @@ int main(int argc, char**argv) {
         fprintf(stderr,"failed to register my region with the new method\n");
     }
  
-    printf("Calling the \"function\" at the base address of the \"good page\";"
+    printf("Calling the \"function\" at the base address of the \"evil page\";"
            "\nshould execute a function at the base address of the "
            "\"evil page\"\n");
 
@@ -90,16 +90,17 @@ int main(int argc, char**argv) {
     /* if everything is working correctly, distant will be executed. If
        everything is *not* working correctly, we'll execute some garbage
        and crash */
-    ret = ((int(*)(void))(newbase))();
+    ret = distant();
 
     printf("ret: %d\n",ret);
 
-    printf("now going to read some characters from the \"good page\"...\n");
+    printf("now going to read some characters from the \"evil page\",\n"
+           "which should return characters read from the \"good page\"...\n");
 
     char buf[16];
     memset(buf,0,16);
 
-    strncpy(buf,(const char *)newbase,15);
+    strncpy(buf,(const char *)distant,15);
 
     printf("read some bytes: %s\n",buf);
 
