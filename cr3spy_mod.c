@@ -134,7 +134,7 @@ static int device_ioctl(struct inode *inode,
             if(ret != 0) {
                 printk("failed to register monitor request\n"); 
             } else {
-            printk("monitor request for 0x%lx (evil: 0x%lx) in 0x%lx registered: %d\n",
+                printk("monitor request for 0x%lx (evil: 0x%lx) in 0x%lx registered: %d\n",
                 new_user_info.good_page,
                 new_user_info.evil_page,
                 new_user_info.cr3,ret);
