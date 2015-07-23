@@ -1,27 +1,25 @@
-#include <linux/module.h>
-#include <linux/kernel.h>
+/* See LICENSE. */
 
-/* character device stuff */
 #include <linux/fs.h>
-#include <asm/uaccess.h>
-#include <asm/hypervisor.h>
+#include <linux/kernel.h>
+#include <linux/module.h>
 
 #include "cr3spy_mod.h"
 
 /* module functions */
 int init_module(void);
 void cleanup_module(void);
-                                                                                
+
 /* ioctl handler */
 static int device_ioctl(struct inode *inode,
                         struct file *file,
                         unsigned int ioctl_num,
                         unsigned long ioctl_param);
- 
+
 static int MOD_USE_CNT = 0;
-                                                                               
+
 /* open and close handlers that manage module use count.
- * note that open will fail if module use count > 0 
+ * note that open will fail if module use count > 0
  * (exclusive access only, given sequence of ioctls required
  * for information retrieval)
  */
@@ -65,7 +63,7 @@ static int device_open(struct inode *inode, struct file *file)
         return -EBUSY;
 
     MOD_USE_CNT++;
- 
+
     try_module_get(THIS_MODULE);
     return 0;
 }
@@ -78,8 +76,8 @@ static int device_close(struct inode *inode, struct file *file)
     return 0;
 }
 
-static int device_ioctl(struct inode *inode, 
-                 struct file *file, 
+static int device_ioctl(struct inode *inode,
+                 struct file *file,
                  unsigned int ioctl_num,
                  unsigned long ioctl_param)
 {
@@ -93,55 +91,6 @@ static int device_ioctl(struct inode *inode,
         case IOCTL_GET_CR3:
             put_user(cr3,(long *)ioctl_param);
             break;
-        case IOCTL_TEST_MONITOR:
-            /* obtain user information for monitoring */
-            ret = copy_from_user(&user_info,
-                (struct monitor_info *)ioctl_param,
-                sizeof(struct monitor_info));
-
-            if(ret != 0) {
-                printk("copy from user failed in monitor reg!\n");
-                return -1;
-            }
-
-            /* execute a hypercall to Xen */
-
-            ret = HYPERVISOR_monitor_region(user_info.cr3,
-                        user_info.lstart,user_info.lend);
-        
-            if(ret != 0) {
-                printk("failed to register monitor request\n"); 
-            } else {
-            printk("monitor request from 0x%lx-0x%lx in 0x%lx registered: %d\n",
-                user_info.lstart,user_info.lend,user_info.cr3,ret);
-            }
-            break;
-        case IOCTL_TEST_NEW_MONITOR:
-            ret = copy_from_user(&new_user_info,
-                (struct new_monitor_info *)ioctl_param,
-                sizeof(struct new_monitor_info));
-
-            if(ret != 0) {
-                printk("copy from user failed in monitor reg!\n");
-                return -1;
-            }
-
-            ret = HYPERVISOR_associate_page_pair(
-                    new_user_info.cr3,
-                    new_user_info.evil_page,
-                    new_user_info.good_page);
-
-            if(ret != 0) {
-                printk("failed to register monitor request\n"); 
-            } else {
-                printk("monitor request for 0x%lx (evil: 0x%lx) in 0x%lx registered: %d\n",
-                new_user_info.good_page,
-                new_user_info.evil_page,
-                new_user_info.cr3,ret);
-            }
-            break;
-        
-
         default:
             return -1;
     }

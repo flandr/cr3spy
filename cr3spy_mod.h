@@ -22,16 +22,12 @@ struct new_monitor_info {
     unsigned long cr3;
     unsigned long good_page;
     unsigned long evil_page;
-}; 
+};
 
 /* set up our ioctls */
 
-#define IOCTL_GET_CR3 _IOR(MAJOR_NUM, 0, long)
  /* ioctl to retrieve the current CR3 value:
   * the PTBR of the current process */
-
-#define IOCTL_TEST_MONITOR _IOR(MAJOR_NUM, 1, struct monitor_info)
-
-#define IOCTL_TEST_NEW_MONITOR _IOR(MAJOR_NUM, 2, struct new_monitor_info)
+#define IOCTL_GET_CR3 _IOR(MAJOR_NUM, 0, long)
 
 #endif
