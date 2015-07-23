@@ -7,7 +7,7 @@
 #define read_cr3() ({ \
     unsigned long __dummy; \
     __asm__ ( \
-        "movl %%cr3,%0\n\t" \
+        "mov %%cr3,%0\n\t" \
         :"=r" (__dummy)); \
     __dummy; \
 })

@@ -1,8 +1,10 @@
 /* See LICENSE. */
 
+#include <asm/uaccess.h>
 #include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include <linux/version.h>
 
 #include "cr3spy_mod.h"
 
@@ -11,10 +13,16 @@ int init_module(void);
 void cleanup_module(void);
 
 /* ioctl handler */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35))
 static int device_ioctl(struct inode *inode,
                         struct file *file,
                         unsigned int ioctl_num,
                         unsigned long ioctl_param);
+#else
+static long device_ioctl(struct file *file,
+                         unsigned int ioctl_num,
+                         unsigned long ioctl_param);
+#endif
 
 static int MOD_USE_CNT = 0;
 
@@ -28,7 +36,11 @@ static int device_close(struct inode *inode, struct file *file);
 
 /* initialize handlers we use */
 static struct file_operations fops = {
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35))
     .ioctl = device_ioctl,
+#else
+    .unlocked_ioctl = device_ioctl,
+#endif
     .open = device_open,
     .release = device_close
 };
@@ -50,10 +62,7 @@ int init_module(void)
 
 void cleanup_module(void)
 {
-    int ret;
-    ret = unregister_chrdev(MAJOR_NUM, DEVICE_NAME);
-    if(ret < 0)
-        printk("Error unregistering device %s: %d\n", DEVICE_NAME, ret);
+    unregister_chrdev(MAJOR_NUM, DEVICE_NAME);
     printk(KERN_INFO "CR3 SPY unloaded.\n");
 }
 
@@ -76,17 +85,18 @@ static int device_close(struct inode *inode, struct file *file)
     return 0;
 }
 
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(2,6,35))
 static int device_ioctl(struct inode *inode,
                  struct file *file,
                  unsigned int ioctl_num,
                  unsigned long ioctl_param)
+#else
+static long device_ioctl(struct file *file,
+                 unsigned int ioctl_num,
+                 unsigned long ioctl_param)
+#endif
 {
-    int ret = 0;
     unsigned long cr3 = read_cr3();
-
-    struct monitor_info user_info;
-    struct new_monitor_info new_user_info;
-
     switch(ioctl_num) {
         case IOCTL_GET_CR3:
             put_user(cr3,(long *)ioctl_param);
