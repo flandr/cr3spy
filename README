@@ -1,7 +1,0 @@
-Build with "make".
-
-Install with "insmod ./cr3spy_mod.ko", then create the character device
-with "mknod /dev/cr3spy c 200 0".
-
-The probe subdirectory has a program that demonstrates use by dumping the
-CR3 value of the executing probe process to stdout.
