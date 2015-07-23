@@ -18,7 +18,7 @@ int main(int argc, char**argv) {
         fprintf(stderr,"Can't open device /dev/%s\n",DEVICE_NAME);
         return -1;
     }
- 
+
     int ret = ioctl(fd, IOCTL_GET_CR3,&cr3val);
     if(ret < 0) {
         fprintf(stderr,"ioctl_get_cr3 failed: %d\n",ret);
@@ -26,7 +26,7 @@ int main(int argc, char**argv) {
         printf("current process cr3: 0x%lx\n",cr3val);
     }
 
-    close(fd);    
+    close(fd);
     return 0;
 }
 

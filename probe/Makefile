@@ -1,6 +1,5 @@
 CC      = gcc
 WFLAGS  = -W -Wall -Wstrict-prototypes
-INCLUDE = -isystem /lib/modules/`uname -r`/build/include
 CFLAGS  = ${WFLAGS} ${INCLUDE}
 
 all : probe

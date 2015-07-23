@@ -12,18 +12,6 @@
     __dummy; \
 })
 
-struct monitor_info {
-    unsigned long cr3;
-    unsigned long lstart;
-    unsigned long lend;
-};
-
-struct new_monitor_info {
-    unsigned long cr3;
-    unsigned long good_page;
-    unsigned long evil_page;
-};
-
 /* set up our ioctls */
 
  /* ioctl to retrieve the current CR3 value:
